@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JJ 패밀리 월간 식비 기록</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF6EC;
+    --paper-2:#F3EEDF;
+    --ink:#2B3A42;
+    --ink-soft:#6B7A80;
+    --line:#E4DCC8;
+    --home:#71916A;
+    --home-bg:#E7F0E3;
+    --out:#DD6C48;
+    --out-bg:#FBE6DC;
+    --delivery:#4E85A8;
+    --delivery-bg:#E3EFF5;
+    --gold:#C08A2E;
+    --gold-bg:#F6ECD6;
+    --holiday:#C43D3D;
+    --shadow: 0 6px 18px rgba(43,58,66,0.08);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 15% 0%, rgba(193,138,46,0.06), transparent 45%),
+      var(--paper);
+    color:var(--ink);
+    font-family:'Noto Sans KR', sans-serif;
+    min-height:100vh;
+    padding:28px 16px 60px;
+  }
+  .app{max-width:900px; margin:0 auto;}
+
+  /* ---------- HERO ---------- */
+  .hero{
+    background:#fff; border:1px solid var(--line); border-radius:20px;
+    padding:28px 28px 22px; box-shadow:var(--shadow); position:relative; overflow:hidden;
+  }
+  .hero::before{
+    content:""; position:absolute; top:0; left:0; right:0; height:6px;
+    background:repeating-linear-gradient(90deg, var(--home) 0 22px, var(--out) 22px 44px, var(--delivery) 44px 66px);
+    opacity:.85;
+  }
+  .eyebrow{font-size:11px; letter-spacing:3px; font-weight:700; color:var(--gold); margin-bottom:6px; text-transform:uppercase;}
+  h1{font-family:'Gowun Batang', serif; font-size:26px; margin:0 0 18px; font-weight:700;}
+  .month-nav{display:flex; align-items:center; gap:14px; margin-bottom:16px;}
+  .month-nav button{
+    width:34px; height:34px; border-radius:50%; border:1px solid var(--line);
+    background:var(--paper-2); color:var(--ink); font-size:16px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; transition:background .15s;
+  }
+  .month-nav button:hover{background:var(--gold-bg);}
+  .month-label{font-family:'Gowun Batang', serif; font-size:19px; font-weight:700; min-width:120px; text-align:center;}
+  .total-row{display:flex; gap:10px; align-items:stretch; margin-bottom:16px; flex-wrap:wrap;}
+  .total-tab{
+    flex:1; min-width:200px; display:flex; align-items:baseline; justify-content:space-between;
+    background:linear-gradient(135deg, var(--gold-bg), #fff);
+    border:1px dashed var(--gold); border-radius:12px; padding:14px 18px;
+  }
+  .total-label{font-size:13px; color:var(--ink-soft); font-weight:500;}
+  .total-amount{font-family:'Gowun Batang', serif; font-size:26px; font-weight:700; color:var(--gold);}
+  .summary-btn{
+    border:1px solid var(--line); background:#fff; border-radius:12px;
+    padding:10px 18px; font-size:13px; font-weight:700; color:var(--ink);
+    cursor:pointer; display:flex; align-items:center; gap:6px; white-space:nowrap;
+  }
+  .summary-btn:hover{background:var(--paper-2);}
+  .legend{display:flex; gap:16px; flex-wrap:wrap;}
+  .legend-item{font-size:12px; font-weight:500; display:flex; align-items:center; gap:5px; color:var(--ink-soft);}
+  .legend-item .dot{width:9px; height:9px; border-radius:50%; display:inline-block;}
+  .dot.home{background:var(--home);} .dot.out{background:var(--out);} .dot.delivery{background:var(--delivery);}
+  .dot.holiday{background:var(--holiday);}
+
+  .sync-banner{
+    margin-top:16px; padding:10px 14px; border-radius:10px; font-size:12.5px;
+    background:var(--delivery-bg); color:var(--delivery); border:1px solid rgba(78,133,168,0.25);
+    display:none; align-items:center; gap:8px;
+  }
+  .sync-banner.show{display:flex;}
+  .sync-banner.error{background:var(--out-bg); color:var(--out); border-color:rgba(221,108,72,0.3);}
+  .sync-banner.ok{background:var(--home-bg); color:var(--home); border-color:rgba(113,145,106,0.3);}
+
+  /* ---------- CALENDAR ---------- */
+  .calendar-wrap{margin-top:22px;}
+  .weekday-row{display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin-bottom:8px; padding:0 2px;}
+  .weekday-row span{text-align:center; font-size:12px; font-weight:700; color:var(--ink-soft);}
+  .weekday-row span.sun{color:var(--holiday);}
+  .weekday-row span.sat{color:#3D6FC4;}
+  .calendar-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:8px;}
+  .day-cell{
+    background:#fff; border:1px solid var(--line); border-radius:12px;
+    padding:8px 7px 6px; min-height:104px; cursor:pointer;
+    display:flex; flex-direction:column; gap:4px;
+    transition:transform .12s, box-shadow .12s, border-color .12s;
+  }
+  .day-cell:hover{transform:translateY(-2px); box-shadow:var(--shadow); border-color:var(--gold);}
+  .day-cell.empty{background:transparent; border:none; cursor:default; box-shadow:none;}
+  .day-cell.empty:hover{transform:none; box-shadow:none;}
+  .day-num{font-size:12.5px; font-weight:700; color:var(--ink);}
+  .day-cell.sun .day-num, .day-cell.holiday .day-num{color:var(--holiday);}
+  .day-cell.sat .day-num{color:#3D6FC4;}
+  .day-cell.today{border:1.5px solid var(--gold);}
+  .day-cell.today .day-num{color:var(--gold);}
+  .holiday-name{
+    font-size:8.5px; font-weight:700; color:var(--holiday); line-height:1.2;
+    margin-top:-2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .stamp{
+    font-size:10.5px; border-radius:6px; padding:2px 5px;
+    display:flex; align-items:center; justify-content:space-between; gap:3px; font-weight:600; line-height:1.5;
+  }
+  .stamp .icon{font-size:11px;}
+  .stamp.home{background:var(--home-bg); color:var(--home);}
+  .stamp.out{background:var(--out-bg); color:var(--out);}
+  .stamp.delivery{background:var(--delivery-bg); color:var(--delivery);}
+  .day-total-mini{
+    margin-top:auto; font-size:11px; font-weight:800; color:var(--ink);
+    border-top:1px dashed var(--line); padding-top:4px; text-align:right;
+  }
+
+  /* ---------- MODAL (공통) ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(43,58,66,0.45);
+    display:none; align-items:center; justify-content:center; padding:16px; z-index:50;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal{
+    background:var(--paper); border-radius:18px; width:100%; max-width:560px;
+    max-height:88vh; overflow:hidden; display:flex; flex-direction:column;
+    box-shadow:0 20px 50px rgba(0,0,0,0.25);
+  }
+  .modal-header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 22px; background:#fff; border-bottom:1px solid var(--line);
+  }
+  .modal-date{font-family:'Gowun Batang', serif; font-size:18px; font-weight:700;}
+  .modal-close{
+    width:30px; height:30px; border-radius:50%; border:none; background:var(--paper-2);
+    font-size:18px; cursor:pointer; color:var(--ink-soft);
+  }
+  .modal-body{padding:18px 22px; overflow-y:auto; display:flex; flex-direction:column; gap:16px;}
+
+  .meal-row{background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:10px;}
+  .meal-label{font-size:12px; font-weight:800; color:var(--gold); letter-spacing:1px;}
+  .menu-input, .place-input{
+    width:100%; border:1px solid var(--line); border-radius:8px; padding:9px 10px;
+    font-size:13.5px; font-family:'Noto Sans KR', sans-serif; background:var(--paper-2);
+  }
+  .menu-input:focus, .place-input:focus, .amount-input:focus{outline:2px solid var(--gold); outline-offset:1px;}
+  .category-toggle{display:flex; gap:6px;}
+  .cat-btn{
+    flex:1; padding:8px 4px; border-radius:8px; border:1px solid var(--line);
+    background:#fff; font-size:12.5px; font-weight:700; cursor:pointer; color:var(--ink-soft); transition:all .12s;
+  }
+  .cat-btn.active.home{background:var(--home); border-color:var(--home); color:#fff;}
+  .cat-btn.active.out{background:var(--out); border-color:var(--out); color:#fff;}
+  .cat-btn.active.delivery{background:var(--delivery); border-color:var(--delivery); color:#fff;}
+  .place-row{display:flex; align-items:center; gap:8px;}
+  .place-icon{
+    width:32px; height:32px; min-width:32px; border-radius:50%; background:var(--paper-2);
+    display:flex; align-items:center; justify-content:center; font-size:15px; border:1px solid var(--line);
+  }
+  .amount-row{display:flex; align-items:center; gap:6px;}
+  .won{font-weight:700; color:var(--ink-soft); font-size:13px;}
+  .amount-input{flex:1; border:1px solid var(--line); border-radius:8px; padding:9px 10px; font-size:13.5px; background:var(--paper-2);}
+  .modal-footer{
+    padding:16px 22px; background:#fff; border-top:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .day-total{font-size:13px; font-weight:700; color:var(--ink-soft);}
+  .day-total span{color:var(--gold); font-size:16px;}
+  .save-btn{background:var(--ink); color:#fff; border:none; border-radius:10px; padding:11px 22px; font-size:14px; font-weight:700; cursor:pointer;}
+  .save-btn:hover{background:#3d5158;}
+
+  /* ---------- 메뉴별 정리 모달 ---------- */
+  .summary-list{display:flex; flex-direction:column; gap:10px;}
+  .summary-empty{text-align:center; color:var(--ink-soft); font-size:13px; padding:30px 0;}
+  .summary-row{background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 14px;}
+  .summary-row-top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;}
+  .summary-menu-name{font-weight:800; font-size:14px;}
+  .summary-count{font-size:11.5px; color:var(--ink-soft); font-weight:600; margin-left:6px;}
+  .summary-amount{font-family:'Gowun Batang', serif; font-weight:700; color:var(--gold); font-size:15px;}
+  .summary-bar-track{height:7px; border-radius:4px; background:var(--paper-2); overflow:hidden;}
+  .summary-bar-fill{height:100%; border-radius:4px; background:linear-gradient(90deg, var(--gold), #E8C977);}
+  .summary-total-line{
+    display:flex; justify-content:space-between; padding:14px 4px 2px; font-size:13px; font-weight:700; color:var(--ink-soft);
+  }
+  .summary-total-line b{color:var(--gold); font-size:16px; font-family:'Gowun Batang', serif;}
+
+  .toast{
+    position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#fff; padding:10px 18px; border-radius:30px;
+    font-size:13px; opacity:0; pointer-events:none; transition:all .25s; z-index:60;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  .setup-note{margin-top:18px; font-size:12px; color:var(--ink-soft); text-align:center; line-height:1.7;}
+
+  @media (max-width:520px){
+    .day-cell{min-height:82px; padding:6px 5px 5px;}
+    .stamp{font-size:9px; padding:2px 4px;}
+    .day-total-mini{font-size:9.5px;}
+    h1{font-size:21px;}
+    .total-amount{font-size:21px;}
+    .total-row{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="hero">
+    <div class="eyebrow">JJ Family Ledger</div>
+    <h1>🍚 JJ 패밀리 월간 식비 기록</h1>
+    <div class="month-nav">
+      <button id="prevMonth" aria-label="이전 달">‹</button>
+      <div class="month-label" id="monthLabel">2026년 8월</div>
+      <button id="nextMonth" aria-label="다음 달">›</button>
+    </div>
+    <div class="total-row">
+      <div class="total-tab">
+        <span class="total-label">이번 달 식비 합계</span>
+        <span class="total-amount" id="monthTotal">₩0</span>
+      </div>
+      <button class="summary-btn" id="summaryBtn">📊 메뉴별로 정리해줘</button>
+    </div>
+    <div class="legend">
+      <span class="legend-item"><span class="dot home"></span>집밥</span>
+      <span class="legend-item"><span class="dot out"></span>외식</span>
+      <span class="legend-item"><span class="dot delivery"></span>배달</span>
+      <span class="legend-item"><span class="dot holiday"></span>공휴일</span>
+    </div>
+    <div class="sync-banner" id="syncBanner"></div>
+  </div>
+
+  <div class="calendar-wrap">
+    <div class="weekday-row">
+      <span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+  </div>
+
+  <div class="setup-note">
+    구글 시트와 연동하려면 <b>AppsScript_코드.gs</b> 안내를 따라 배포 후, 이 파일 상단의 <code>SHEET_WEBAPP_URL</code>에 배포 URL을 넣어주세요.
+  </div>
+</div>
+
+<!-- 하루 입력 모달 -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-date" id="modalDate">8월 14일 (금)</div>
+      <button class="modal-close" id="modalClose">×</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <div class="day-total">오늘 합계 <span id="dayTotal">₩0</span></div>
+      <button class="save-btn" id="saveBtn">저장하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 메뉴별 정리 모달 -->
+<div class="modal-overlay" id="summaryOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-date" id="summaryTitle">8월 메뉴별 정리</div>
+      <button class="modal-close" id="summaryClose">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="summary-list" id="summaryList"></div>
+      <div class="summary-total-line">
+        <span>이번 달 합계</span>
+        <b id="summaryTotal">₩0</b>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   설정: 구글 시트 연동용 Apps Script 웹앱 URL을 여기에 붙여넣으세요.
+   (AppsScript_코드.gs 파일 안내 참고, 배포 후 나오는 URL을 그대로 복사)
+   ========================================================= */
+const CONFIG = {
+  SHEET_WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbxoWX0YkJmnVRZ9W5p_cHmRP39owGwJFeMuDSluMH8XO2BuADwAcdgFy4tSFIRTog5P/exec'
+};
+
+const MEALS = ['아침','점심','저녁'];
+const CATS = ['집밥','외식','배달'];
+const CAT_CLASS = { '집밥':'home', '외식':'out', '배달':'delivery' };
+const PLACE_LABEL = { '집밥':'구입처', '외식':'외식 장소', '배달':'배달 업소' };
+const PLACE_PLACEHOLDER = {
+  '집밥':'예: 이마트, 홈플러스, 전통시장',
+  '외식':'예: OO식당, OO카페',
+  '배달':'예: 배달의민족, 쿠팡이츠, 요기요'
+};
+
+/* 장소/업소 이름 → 아이콘 (실제 브랜드 로고 대신 알아보기 쉬운 아이콘 뱃지로 표시) */
+const ICON_MAP = [
+  { kw:['배달의민족','배민'], icon:'🛵' },
+  { kw:['쿠팡이츠','쿠팡'], icon:'📦' },
+  { kw:['요기요'], icon:'🛵' },
+  { kw:['이마트'], icon:'🛒' },
+  { kw:['홈플러스'], icon:'🛒' },
+  { kw:['코스트코'], icon:'🛒' },
+  { kw:['마트'], icon:'🛒' },
+  { kw:['시장'], icon:'🥬' },
+  { kw:['GS25','CU','세븐일레븐','세븐','편의점'], icon:'🏪' },
+  { kw:['스타벅스','투썸','카페','커피'], icon:'☕' },
+  { kw:['식당','밥집','한식','중식','일식','양식','분식'], icon:'🍽️' },
+];
+function getIcon(name, cat){
+  if(name){
+    const hit = ICON_MAP.find(item => item.kw.some(k => name.includes(k)));
+    if(hit) return hit.icon;
+  }
+  if(cat === '집밥') return '🏠';
+  if(cat === '외식') return '🍽️';
+  if(cat === '배달') return '🛵';
+  return '❔';
+}
+
+/* 메뉴 이름 → 메뉴 카테고리 (예: 'BBQ치킨' → '치킨') */
+const MENU_CATEGORY_MAP = [
+  { kw:['치킨','후라이드','양념치킨','교촌','bbq','비비큐','푸라닭','굽네'], label:'치킨' },
+  { kw:['피자'], label:'피자' },
+  { kw:['짜장','짬뽕','탕수육','마라탕','마라샹궈','중국집'], label:'중식' },
+  { kw:['초밥','스시','회','사시미'], label:'초밥/회' },
+  { kw:['라면'], label:'라면' },
+  { kw:['떡볶이','순대','튀김','어묵'], label:'분식' },
+  { kw:['김밥'], label:'김밥' },
+  { kw:['국밥','설렁탕','곰탕','해장국'], label:'국밥' },
+  { kw:['찌개','전골'], label:'찌개/전골' },
+  { kw:['삼겹살','갈비','구이','고기'], label:'고기/구이' },
+  { kw:['햄버거','버거'], label:'햄버거' },
+  { kw:['돈까스','돈가스'], label:'돈까스' },
+  { kw:['파스타','스테이크','리조또','피자'], label:'양식' },
+  { kw:['카페','커피','라떼','아메리카노','스타벅스','투썸'], label:'카페/커피' },
+  { kw:['빵','베이커리','케이크','디저트'], label:'빵/디저트' },
+  { kw:['족발','보쌈'], label:'족발/보쌈' },
+  { kw:['샐러드'], label:'샐러드' },
+  { kw:['국수','우동','냉면','칼국수'], label:'면 요리' },
+  { kw:['백반','한정식'], label:'한식' },
+];
+function classifyMenu(menuRaw){
+  const menu = (menuRaw || '').trim();
+  if(!menu) return '메뉴 미입력';
+  const lower = menu.toLowerCase();
+  const hit = MENU_CATEGORY_MAP.find(item => item.kw.some(k => lower.includes(k.toLowerCase())));
+  return hit ? hit.label : menu;
+}
+
+function fmtWon(n){ return '₩' + Math.round(n||0).toLocaleString('ko-KR'); }
+function dateKey(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+
+/* 대한민국 공휴일 (2025~2027, 대체공휴일 포함) — 관공서·학교 기준, 근로자의 날 제외
+   새 임시공휴일이 생기면 이 목록에 추가해주세요. */
+const HOLIDAYS = {
+  '2025-01-01':'신정', '2025-01-27':'설날 임시공휴일', '2025-01-28':'설날 연휴', '2025-01-29':'설날',
+  '2025-01-30':'설날 연휴', '2025-03-01':'삼일절', '2025-03-03':'삼일절 대체공휴일',
+  '2025-05-05':'어린이날·부처님오신날', '2025-05-06':'어린이날 대체공휴일', '2025-06-06':'현충일',
+  '2025-08-15':'광복절', '2025-10-03':'개천절', '2025-10-05':'추석 연휴', '2025-10-06':'추석',
+  '2025-10-07':'추석 연휴', '2025-10-08':'추석 대체공휴일', '2025-10-09':'한글날', '2025-12-25':'기독탄신일',
+
+  '2026-01-01':'신정', '2026-02-16':'설날 연휴', '2026-02-17':'설날', '2026-02-18':'설날 연휴',
+  '2026-03-01':'삼일절', '2026-03-02':'삼일절 대체공휴일', '2026-05-05':'어린이날',
+  '2026-05-24':'부처님오신날', '2026-05-25':'부처님오신날 대체공휴일', '2026-06-06':'현충일',
+  '2026-07-17':'제헌절', '2026-08-15':'광복절', '2026-08-17':'광복절 대체공휴일',
+  '2026-09-24':'추석 연휴', '2026-09-25':'추석', '2026-09-26':'추석 연휴', '2026-10-03':'개천절',
+  '2026-10-05':'개천절 대체공휴일', '2026-10-09':'한글날', '2026-12-25':'기독탄신일',
+
+  '2027-01-01':'신정', '2027-02-06':'설날 연휴', '2027-02-07':'설날', '2027-02-08':'설날 연휴',
+  '2027-02-09':'설날 대체공휴일', '2027-03-01':'삼일절', '2027-05-05':'어린이날',
+  '2027-05-13':'부처님오신날', '2027-06-06':'현충일', '2027-07-17':'제헌절',
+  '2027-07-19':'제헌절 대체공휴일', '2027-08-15':'광복절', '2027-08-16':'광복절 대체공휴일',
+  '2027-09-14':'추석 연휴', '2027-09-15':'추석', '2027-09-16':'추석 연휴', '2027-10-03':'개천절',
+  '2027-10-04':'개천절 대체공휴일', '2027-10-09':'한글날', '2027-10-11':'한글날 대체공휴일',
+  '2027-12-25':'기독탄신일', '2027-12-27':'기독탄신일 대체공휴일',
+};
+
+/* state.entries[dateKey] = { '아침':{category,menu,place,amount}, '점심':{...}, '저녁':{...} } */
+const state = {
+  year: new Date().getFullYear(),
+  month: new Date().getMonth(),
+  entries: {},
+  currentDateKey: null
+};
+
+/* ---------------- CALENDAR RENDER ---------------- */
+function renderCalendar(){
+  document.getElementById('monthLabel').textContent = `${state.year}년 ${state.month+1}월`;
+  const grid = document.getElementById('calendarGrid');
+  grid.innerHTML = '';
+
+  const firstDay = new Date(state.year, state.month, 1).getDay();
+  const daysInMonth = new Date(state.year, state.month+1, 0).getDate();
+  const today = new Date();
+  const todayKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
+
+  for(let i=0;i<firstDay;i++){
+    const empty = document.createElement('div');
+    empty.className = 'day-cell empty';
+    grid.appendChild(empty);
+  }
+
+  let monthTotal = 0;
+
+  for(let d=1; d<=daysInMonth; d++){
+    const key = dateKey(state.year, state.month, d);
+    const dow = new Date(state.year, state.month, d).getDay();
+    const holidayName = HOLIDAYS[key];
+
+    let cls = 'day-cell';
+    if(key === todayKey) cls += ' today';
+    if(dow === 0) cls += ' sun';
+    if(dow === 6) cls += ' sat';
+    if(holidayName) cls += ' holiday';
+
+    const cell = document.createElement('div');
+    cell.className = cls;
+    cell.dataset.date = key;
+
+    const num = document.createElement('div');
+    num.className = 'day-num';
+    num.textContent = d;
+    cell.appendChild(num);
+
+    if(holidayName){
+      const hName = document.createElement('div');
+      hName.className = 'holiday-name';
+      hName.textContent = holidayName;
+      hName.title = holidayName;
+      cell.appendChild(hName);
+    }
+
+    const dayData = state.entries[key];
+    let dayTotal = 0;
+    if(dayData){
+      MEALS.forEach(meal => {
+        const m = dayData[meal];
+        if(m && m.amount){
+          dayTotal += Number(m.amount);
+          const stamp = document.createElement('div');
+          stamp.className = 'stamp ' + CAT_CLASS[m.category];
+          stamp.innerHTML = `<span class="icon">${getIcon(m.place, m.category)}</span><span>${fmtWon(m.amount)}</span>`;
+          cell.appendChild(stamp);
+        }
+      });
+    }
+    if(dayTotal > 0){
+      const tot = document.createElement('div');
+      tot.className = 'day-total-mini';
+      tot.textContent = fmtWon(dayTotal);
+      cell.appendChild(tot);
+      monthTotal += dayTotal;
+    }
+
+    cell.addEventListener('click', () => openDayModal(key));
+    grid.appendChild(cell);
+  }
+
+  document.getElementById('monthTotal').textContent = fmtWon(monthTotal);
+}
+
+/* ---------------- 하루 입력 모달 ---------------- */
+function openDayModal(key){
+  state.currentDateKey = key;
+  const [y,m,d] = key.split('-').map(Number);
+  const dow = ['일','월','화','수','목','금','토'][new Date(y, m-1, d).getDay()];
+  const holidayName = HOLIDAYS[key];
+  document.getElementById('modalDate').innerHTML =
+    `${m}월 ${d}일 (${dow})` + (holidayName ? ` <span style="color:#C43D3D; font-size:12px; font-weight:700;">· ${holidayName}</span>` : '');
+
+  const data = state.entries[key] || {};
+  const body = document.getElementById('modalBody');
+  body.innerHTML = '';
+
+  MEALS.forEach(meal => {
+    const existing = data[meal] || { category:'', menu:'', place:'', amount:'' };
+    const row = document.createElement('div');
+    row.className = 'meal-row';
+    row.dataset.meal = meal;
+    row.innerHTML = `
+      <div class="meal-label">${meal}</div>
+      <input type="text" class="menu-input" placeholder="메뉴 (예: 김치찌개)" value="${existing.menu || ''}">
+      <div class="category-toggle">
+        ${CATS.map(c => `<button type="button" class="cat-btn ${CAT_CLASS[c]} ${existing.category===c?'active '+CAT_CLASS[c]:''}" data-cat="${c}">${c}</button>`).join('')}
+      </div>
+      <div class="place-row" style="display:${existing.category ? 'flex':'none'}">
+        <span class="place-icon">${getIcon(existing.place, existing.category)}</span>
+        <input type="text" class="place-input" placeholder="${PLACE_PLACEHOLDER[existing.category]||''}" value="${existing.place || ''}">
+      </div>
+      <div class="amount-row">
+        <span class="won">₩</span>
+        <input type="number" class="amount-input" placeholder="0" min="0" step="100" value="${existing.amount || ''}">
+      </div>
+    `;
+    body.appendChild(row);
+
+    const catBtns = row.querySelectorAll('.cat-btn');
+    const placeRow = row.querySelector('.place-row');
+    const placeInput = row.querySelector('.place-input');
+    const placeIcon = row.querySelector('.place-icon');
+
+    catBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        catBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const cat = btn.dataset.cat;
+        placeRow.style.display = 'flex';
+        placeInput.placeholder = PLACE_PLACEHOLDER[cat];
+        placeIcon.textContent = getIcon(placeInput.value, cat);
+        updateDayTotalPreview();
+      });
+    });
+    placeInput.addEventListener('input', () => {
+      const activeCat = row.querySelector('.cat-btn.active');
+      const cat = activeCat ? activeCat.dataset.cat : '';
+      placeIcon.textContent = getIcon(placeInput.value, cat);
+    });
+    row.querySelector('.amount-input').addEventListener('input', updateDayTotalPreview);
+  });
+
+  updateDayTotalPreview();
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function updateDayTotalPreview(){
+  const rows = document.querySelectorAll('#modalBody .meal-row');
+  let total = 0;
+  rows.forEach(row => { total += Number(row.querySelector('.amount-input').value) || 0; });
+  document.getElementById('dayTotal').textContent = fmtWon(total);
+}
+
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('show'); }
+
+/* ---------------- 저장 ---------------- */
+async function saveDay(){
+  const key = state.currentDateKey;
+  const rows = document.querySelectorAll('#modalBody .meal-row');
+  const dayData = {};
+  const mealsForSync = [];
+
+  rows.forEach(row => {
+    const meal = row.dataset.meal;
+    const menu = row.querySelector('.menu-input').value.trim();
+    const activeCat = row.querySelector('.cat-btn.active');
+    const category = activeCat ? activeCat.dataset.cat : '';
+    const place = row.querySelector('.place-input').value.trim();
+    const amount = Number(row.querySelector('.amount-input').value) || 0;
+
+    if(menu || amount || place){ dayData[meal] = { category, menu, place, amount }; }
+    mealsForSync.push({ meal, category, menu, place, amount });
+  });
+
+  if(Object.keys(dayData).length){ state.entries[key] = dayData; }
+  else { delete state.entries[key]; }
+
+  renderCalendar();
+  closeModal();
+  showToast('저장했어요 🍚');
+  syncDayToSheet(key, mealsForSync);
+}
+
+/* ---------------- 메뉴별 정리 ---------------- */
+function openSummary(){
+  document.getElementById('summaryTitle').textContent = `${state.month+1}월 메뉴별 정리`;
+  const map = {};
+  Object.keys(state.entries).forEach(key => {
+    const [y, m] = key.split('-').map(Number);
+    if(y !== state.year || m !== state.month+1) return;
+    const dayData = state.entries[key];
+    MEALS.forEach(meal => {
+      const entry = dayData[meal];
+      if(entry && (entry.amount || entry.menu)){
+        const label = classifyMenu(entry.menu);
+        if(!map[label]) map[label] = { count:0, total:0 };
+        map[label].count += 1;
+        map[label].total += Number(entry.amount) || 0;
+      }
+    });
+  });
+
+  const items = Object.entries(map)
+    .map(([label, v]) => ({ label, ...v }))
+    .sort((a,b) => b.total - a.total);
+
+  const listEl = document.getElementById('summaryList');
+  listEl.innerHTML = '';
+
+  if(items.length === 0){
+    listEl.innerHTML = '<div class="summary-empty">이번 달에 입력된 식비 기록이 아직 없어요.</div>';
+  } else {
+    const maxTotal = items[0].total || 1;
+    items.forEach(item => {
+      const pct = Math.max(4, Math.round((item.total / maxTotal) * 100));
+      const row = document.createElement('div');
+      row.className = 'summary-row';
+      row.innerHTML = `
+        <div class="summary-row-top">
+          <span class="summary-menu-name">${item.label}<span class="summary-count">${item.count}회</span></span>
+          <span class="summary-amount">${fmtWon(item.total)}</span>
+        </div>
+        <div class="summary-bar-track"><div class="summary-bar-fill" style="width:${pct}%"></div></div>
+      `;
+      listEl.appendChild(row);
+    });
+  }
+
+  const grandTotal = items.reduce((sum, it) => sum + it.total, 0);
+  document.getElementById('summaryTotal').textContent = fmtWon(grandTotal);
+  document.getElementById('summaryOverlay').classList.add('show');
+}
+function closeSummary(){ document.getElementById('summaryOverlay').classList.remove('show'); }
+
+/* ---------------- 구글 시트 연동 ---------------- */
+function showBanner(text, type){
+  const el = document.getElementById('syncBanner');
+  el.textContent = text;
+  el.className = 'sync-banner show' + (type ? ' '+type : '');
+}
+async function syncDayToSheet(dateKeyStr, meals){
+  if(!CONFIG.SHEET_WEBAPP_URL){
+    showBanner('⚠️ 구글 시트가 연결되지 않았어요. 이 브라우저에만 임시로 저장됩니다. (하단 안내 참고)', 'error');
+    return;
+  }
+  try{
+    await fetch(CONFIG.SHEET_WEBAPP_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'saveDay', date: dateKeyStr, meals })
+    });
+    showBanner('☁️ 구글 시트에 저장됐어요', 'ok');
+    setTimeout(() => document.getElementById('syncBanner').classList.remove('show'), 2500);
+  }catch(err){
+    showBanner('⚠️ 시트 저장에 실패했어요. 네트워크 또는 배포 설정을 확인해주세요.', 'error');
+  }
+}
+async function loadFromSheet(){
+  if(!CONFIG.SHEET_WEBAPP_URL){
+    showBanner('⚠️ 구글 시트가 연결되지 않았어요. 하단 안내를 따라 연결해주세요.', 'error');
+    return;
+  }
+  try{
+    const res = await fetch(CONFIG.SHEET_WEBAPP_URL);
+    const rows = await res.json();
+    state.entries = {};
+    rows.forEach(r => {
+      if(!state.entries[r.date]) state.entries[r.date] = {};
+      state.entries[r.date][r.meal] = { category:r.category, menu:r.menu, place:r.place, amount:Number(r.amount)||0 };
+    });
+    renderCalendar();
+    document.getElementById('syncBanner').classList.remove('show');
+  }catch(err){
+    showBanner('⚠️ 시트 데이터를 불러오지 못했어요.', 'error');
+  }
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+/* ---------------- 이벤트 ---------------- */
+document.getElementById('prevMonth').addEventListener('click', () => {
+  state.month--; if(state.month < 0){ state.month = 11; state.year--; } renderCalendar();
+});
+document.getElementById('nextMonth').addEventListener('click', () => {
+  state.month++; if(state.month > 11){ state.month = 0; state.year++; } renderCalendar();
+});
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('modalOverlay').addEventListener('click', (e) => { if(e.target.id === 'modalOverlay') closeModal(); });
+document.getElementById('saveBtn').addEventListener('click', saveDay);
+document.getElementById('summaryBtn').addEventListener('click', openSummary);
+document.getElementById('summaryClose').addEventListener('click', closeSummary);
+document.getElementById('summaryOverlay').addEventListener('click', (e) => { if(e.target.id === 'summaryOverlay') closeSummary(); });
+
+/* ---------------- 초기화 ---------------- */
+renderCalendar();
+loadFromSheet();
+</script>
+</body>
+</html>
